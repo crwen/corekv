@@ -54,7 +54,7 @@ func (s *Arena) putNode(height int) uint32 {
 	// 所以要计算清楚需要申请多大的内存空间.
 	unusedSize := (defaultMaxLevel - height) * offsetSize
 
-	l := uint32(MaxNodeSize - unusedSize)
+	l := uint32(MaxNodeSize - unusedSize + nodeAlign)
 	n := s.allocate(l)
 
 	m := (n + uint32(nodeAlign)) &^ uint32(nodeAlign)
