@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"sync"
 )
 
@@ -89,7 +90,8 @@ func (list *SkipList) Add(data *Entry) error {
 	}
 
 	//从当前最大高度开始
-	max := list.currHeight
+	//max := list.currHeight
+	max := list.maxLevel
 	//拿到头节点，从第一个开始
 	prevElem := list.arena.getElement(list.headOffset)
 	//用来记录访问路径
@@ -126,11 +128,16 @@ func (list *SkipList) Add(data *Entry) error {
 	}
 
 	level := list.randLevel()
-
+	if level > list.maxLevel {
+		list.maxLevel = level
+	}
 	elem = newElement(list.arena, data.Key, value, level)
 	//to add elem to the skiplist
 	off := list.arena.getElementOffset(elem)
 	for i := 0; i < level; i++ {
+		if prevElemHeaders[i] == nil {
+			prevElemHeaders[i] = list.arena.getElement(list.headOffset)
+		}
 		elem.levels[i] = prevElemHeaders[i].levels[i]
 		prevElemHeaders[i].levels[i] = off
 	}
@@ -148,7 +155,8 @@ func (list *SkipList) Search(key []byte) (e *Entry) {
 	score := calcScore(key)
 
 	prevElem := list.arena.getElement(list.headOffset)
-	i := list.currHeight
+	//i := list.currHeight
+	i := list.maxLevel - 1
 
 	for i >= 0 {
 		for next := list.getNext(prevElem, int(i)); next != nil; next = list.getNext(prevElem, int(i)) {
@@ -200,7 +208,8 @@ func calcScore(key []byte) (score float64) {
 
 func (list *SkipList) compare(score float64, key []byte, next *Element) int {
 	if score == next.score {
-		return CompareKeys(key, next.key(list.arena))
+		//return CompareKeys(key, next.key(list.arena))
+		return bytes.Compare(key, next.key(list.arena))
 	}
 
 	if score < next.score {
@@ -211,11 +220,11 @@ func (list *SkipList) compare(score float64, key []byte, next *Element) int {
 }
 
 func (list *SkipList) randLevel() int {
-	if list.maxLevel <= 1 {
-		return 1
-	}
+	//if list.maxLevel <= 1 {
+	//	return 1
+	//}
 	i := 1
-	for ; i < list.maxLevel; i++ {
+	for ; i < defaultMaxLevel; i++ {
 		if RandN(1000)%2 == 0 {
 			return i
 		}
